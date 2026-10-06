@@ -5,24 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BulutFlash - Akıllı Sunum Sistemi</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-    <!-- PDF.js Kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #050505; /* Tam Siyah Arka Plan */
+            background-color: #050505; 
             color: #e2e8f0; 
             overscroll-behavior-y: contain; 
         }
         
-        /* Neon Efektleri */
         .neon-text-emerald {
             color: #34d399;
             text-shadow: 0 0 5px #059669, 0 0 15px #10b981;
@@ -78,7 +72,6 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden selection:bg-cyan-500 selection:text-white">
 
-    <!-- Navbar -->
     <header class="bg-[#0a0a0a] border-b border-slate-800 px-6 py-4 flex justify-between items-center z-25 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
         <div class="flex items-center gap-3">
             <div class="bg-black border border-emerald-500 p-2 rounded-xl text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
@@ -91,7 +84,6 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-grow flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
         <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
             
@@ -114,7 +106,7 @@
                     <i class="ph-bold ph-upload-simple text-2xl"></i> PDF Seç & Yükle
                 </button>
                 <input type="file" id="pdf-upload-input" accept="application/pdf" class="hidden" onchange="window.handlePdfUpload(event)">
-                <p class="text-xs text-slate-500 mt-4 font-semibold">Büyük Dosya Desteği (50 MB'a kadar)</p>
+                <p class="text-xs text-slate-500 mt-4 font-semibold">Dev Dosya Desteği (50 MB'a kadar)</p>
 
                 <!-- Yükleme İlerlemesi -->
                 <div id="upload-progress-container" class="w-full mt-6 hidden flex-col items-center">
@@ -162,7 +154,6 @@
         </div>
     </main>
 
-    <!-- TAM EKRAN PDF GÖSTERİCİ (MODAL) - SİYAH TEMA & ALTTAN KONTROL -->
     <div id="pdf-viewer-modal" class="fixed inset-0 bg-black z-50 hidden flex-col text-white">
         
         <!-- PDF Canvas Alanı -->
@@ -209,7 +200,6 @@
     <!-- Toast Bildirim Konteyneri -->
     <div id="toast-container" class="fixed top-6 right-6 z-[60] flex flex-col gap-3 pointer-events-none"></div>
 
-    <!-- Gelişmiş IndexedDB & PDF Motoru -->
     <script>
         window.showToast = function(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -234,7 +224,7 @@
             }, 3500);
         };
 
-        // IndexedDB Veritabanı Açma (Büyük Dosyalar İçin)
+        // IndexedDB Veritabanı Açma (Büyük Dosyalar İçin Kesintisiz Hafıza)
         function openDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open('BulutFlashDB', 1);
@@ -275,7 +265,7 @@
                 const request = store.getAll();
                 request.onsuccess = () => {
                     const allFiles = request.result;
-                    const filtered = allFiles.filter(f => f.folder === folder);
+                    const filtered = allFiles.filter(f => f.folder.toUpperCase() === folder.toUpperCase());
                     resolve(filtered);
                 };
                 request.onerror = () => reject(request.error);
@@ -426,13 +416,13 @@
             progContainer.classList.remove('hidden');
             progContainer.classList.add('flex');
             progBar.style.width = '30%';
-            statusTxt.innerText = "Büyük dosya okunuyor...";
+            statusTxt.innerText = "Dev dosya okunuyor...";
 
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     progBar.style.width = '70%';
-                    statusTxt.innerText = "Diske kaydediliyor...";
+                    statusTxt.innerText = "Kasaya kaydediliyor...";
                     
                     await saveFileToDB(folderInput, {
                         filename: file.name,
