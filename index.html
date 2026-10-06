@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BulutFlash - Akıllı Sunum Sistemi</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- PDF.js Kutüphanesi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #050505; /* Tam Siyah Arka Plan */
+            color: #e2e8f0; 
+            overscroll-behavior-y: contain; /* Kaydırma taşmasını engelle */
+        }
+        
+        /* Neon Efektleri */
+        .neon-text-emerald {
+            color: #34d399;
+            text-shadow: 0 0 5px #059669, 0 0 15px #10b981;
+        }
+        .neon-text-cyan {
+            color: #22d3ee;
+            text-shadow: 0 0 5px #0891b2, 0 0 15px #06b6d4;
+        }
+        .neon-border-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2), inset 0 0 10px rgba(16, 185, 129, 0.1);
+            border-color: #059669;
+        }
+        .neon-border-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2), inset 0 0 10px rgba(6, 182, 212, 0.1);
+            border-color: #0891b2;
+        }
+
+        .loader {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .progress-bg {
+            width: 100%;
+            background-color: #1e293b;
+            border-radius: 9999px;
+            height: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+        .progress-fill {
+            background-color: #10b981;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px #10b981;
+        }
+        
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-enter { animation: slideInUp 0.3s ease-out forwards; }
+
+        /* Canvas geçiş efekti (Pinch zoom sırasında yumuşaklık için) */
+        #pdf-canvas {
+            transform-origin: top left;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden selection:bg-cyan-500 selection:text-white">
+
+    <!-- Navbar -->
+    <header class="bg-[#0a0a0a] border-b border-slate-800 px-6 py-4 flex justify-between items-center z-20 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+        <div class="flex items-center gap-3">
+            <div class="bg-black border border-emerald-500 p-2 rounded-xl text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                <i class="ph-bold ph-lightning text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-black tracking-tight text-white">Bulut<span class="neon-text-emerald">Flash</span></h1>
+        </div>
+        <div class="text-sm font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-lg">
+            Siber Sürüm v3
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+            
+            <!-- SOL TARAF: Evde Yükleme Alanı -->
+            <div class="bg-[#0f1219] border border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden group hover:neon-border-emerald transition-all duration-500">
+                <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500 shadow-[0_0_15px_#10b981]"></div>
+                
+                <div class="w-24 h-24 bg-black border border-emerald-900 text-emerald-400 rounded-full flex items-center justify-center mb-6 mt-4 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300">
+                    <i class="ph-fill ph-folder-plus text-5xl drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]"></i>
+                </div>
+                
+                <h2 class="text-3xl font-extrabold mb-3 neon-text-emerald">1. Evde Yükle</h2>
+                <p class="text-slate-400 mb-6 text-sm">Kendinize ait bir Klasör Adı (örn: MAT9) belirleyin. Evdeki PDF sunumunuzu bu klasöre gönderin.</p>
+                
+                <div class="w-full flex flex-col gap-4 mb-4">
+                    <input type="text" id="upload-folder-input" placeholder="KLASÖR ADINIZ (Örn: MAT9)" class="w-full px-4 py-4 bg-black border border-slate-700 rounded-2xl font-bold text-xl text-center text-white focus:outline-none focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] uppercase placeholder:text-slate-600 transition-all">
+                </div>
+
+                <button onclick="document.getElementById('pdf-upload-input').click()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all flex justify-center items-center gap-3 cursor-pointer">
+                    <i class="ph-bold ph-upload-simple text-2xl"></i> PDF Seç & Yükle
+                </button>
+                <input type="file" id="pdf-upload-input" accept="application/pdf" class="hidden" onchange="window.handlePdfUpload(event)">
+                <p class="text-xs text-slate-500 mt-4 font-semibold">Maksimum PDF Boyutu: 25 MB</p>
+
+                <!-- Yükleme İlerlemesi -->
+                <div id="upload-progress-container" class="w-full mt-6 hidden flex-col items-center">
+                    <div class="flex items-center gap-3 text-emerald-400 font-bold mb-2">
+                        <div class="loader !w-6 !h-6 !border-emerald-900 !border-t-emerald-400"></div>
+                        <span id="upload-status-text" class="tracking-wide">Kasaya aktarılıyor...</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div id="upload-progress-bar" class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SAĞ TARAF: Okulda Açma Alanı -->
+            <div class="bg-[#0f141e] border border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden group hover:neon-border-cyan transition-all duration-500">
+                <div class="absolute top-0 left-0 w-full h-1 bg-cyan-500 shadow-[0_0_15px_#06b6d4]"></div>
+                
+                <div class="w-24 h-24 bg-black border border-cyan-900 text-cyan-400 rounded-full flex items-center justify-center mb-6 mt-4 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all duration-300">
+                    <i class="ph-fill ph-chalkboard-teacher text-5xl drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
+                </div>
+                
+                <h2 class="text-3xl font-extrabold mb-3 neon-text-cyan">2. Okulda Aç</h2>
+                <p class="text-slate-400 mb-6 text-sm">Akıllı tahtadan klasör adınızı girin ve içindeki dosyalarınıza anında ulaşın. Flash bellek gerekmez.</p>
+                
+                <div class="w-full flex flex-col gap-4">
+                    <input type="text" id="download-folder-input" placeholder="KLASÖR ADINIZ (Örn: MAT9)" class="w-full px-4 py-4 bg-black border border-slate-700 rounded-2xl font-bold text-xl text-center text-white focus:outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] uppercase placeholder:text-slate-600 transition-all">
+                    
+                    <button onclick="window.fetchFolderContents()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xl py-4 rounded-2xl shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all flex justify-center items-center gap-3 cursor-pointer">
+                        <i class="ph-bold ph-folder-open text-2xl"></i> Klasörümü Aç
+                    </button>
+                </div>
+
+                <!-- Klasör İçeriği Listesi -->
+                <div id="folder-contents-container" class="w-full mt-6 hidden flex-col items-start gap-3 bg-black p-4 rounded-2xl border border-slate-800 max-h-48 overflow-y-auto custom-scrollbar">
+                    <h3 class="text-slate-300 font-bold text-sm w-full text-left border-b border-slate-800 pb-2 mb-1 flex justify-between items-center">
+                        <span class="text-cyan-400">Klasördeki Sunumlar</span>
+                        <i class="ph-bold ph-files text-cyan-500"></i>
+                    </h3>
+                    <div id="file-list" class="w-full flex flex-col gap-2">
+                        <!-- Dosyalar buraya JavaScript ile eklenecek -->
+                    </div>
+                </div>
+
+                <!-- İndirme İlerlemesi -->
+                <div id="download-progress-container" class="w-full mt-6 hidden flex-col items-center">
+                    <div class="flex items-center gap-3 text-cyan-400 font-bold mb-2">
+                        <div class="loader !w-6 !h-6 !border-cyan-900 !border-t-cyan-400"></div>
+                        <span id="download-status-text" class="tracking-wide">Sunum çözülüyor...</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div id="download-progress-bar" class="progress-fill !bg-cyan-500 !shadow-[0_0_10px_#06b6d4]"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- TAM EKRAN PDF GÖSTERİCİ (MODAL) - SİYAH TEMA -->
+    <div id="pdf-viewer-modal" class="fixed inset-0 bg-black z-50 hidden flex-col text-white">
+        
+        <!-- PDF Canvas Alanı (ÜSTTE) -->
+        <div id="pdf-canvas-container" class="flex-grow overflow-auto flex justify-center items-center bg-[#0a0a0a] cursor-grab active:cursor-grabbing relative touch-none">
+            <!-- Canvas'ın arka planı kendi içinde beyaz kalır ki PDF düzgün görünsün -->
+            <canvas id="pdf-canvas" class="shadow-[0_0_30px_rgba(0,0,0,0.8)] rounded-md bg-white transition-transform duration-75 ease-out"></canvas>
+        </div>
+
+        <!-- PDF Alt Kontrol Çubuğu (ALTTA) -->
+        <div class="bg-[#0f172a] border-t border-slate-800 p-4 flex flex-wrap justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.5)] gap-4 z-10 shrink-0">
+            
+            <div class="flex items-center gap-3">
+                <button onclick="window.closePdfViewer()" class="bg-red-600 hover:bg-red-500 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_10px_rgba(220,38,38,0.3)]">
+                    <i class="ph-bold ph-power text-xl"></i> Çıkış
+                </button>
+                <span id="pdf-title-display" class="font-semibold hidden md:block text-slate-400 truncate max-w-[200px]">Sunum</span>
+            </div>
+
+            <!-- Sayfa Değiştirme -->
+            <div class="flex items-center gap-2 bg-black border border-slate-800 p-1.5 rounded-2xl shadow-inner">
+                <button onclick="window.prevPage()" class="p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer active:scale-95 text-cyan-400">
+                    <i class="ph-bold ph-caret-left text-2xl"></i>
+                </button>
+                <div class="px-4 font-bold text-xl min-w-[5rem] text-center text-white tracking-widest">
+                    <span id="page-num">1</span> <span class="text-slate-600">/</span> <span id="page-count" class="text-slate-400">?</span>
+                </div>
+                <button onclick="window.nextPage()" class="p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer active:scale-95 text-cyan-400">
+                    <i class="ph-bold ph-caret-right text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Zoom Kontrolleri (Ekranın Alt Sağında) -->
+            <div class="flex items-center gap-2 bg-black border border-slate-800 p-1.5 rounded-2xl">
+                <button onclick="window.zoomOut()" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer text-slate-300">
+                    <i class="ph-bold ph-magnifying-glass-minus text-2xl"></i>
+                </button>
+                <span id="zoom-level" class="font-bold text-sm min-w-[3.5rem] text-center text-emerald-400">100%</span>
+                <button onclick="window.zoomIn()" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer text-slate-300">
+                    <i class="ph-bold ph-magnifying-glass-plus text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Bildirim Konteyneri -->
+    <div id="toast-container" class="fixed top-6 right-6 z-[60] flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- UI & PDF İşlemleri Javascript -->
+    <script>
+        // 1. Toast (Bildirim) Fonksiyonu
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let styling = '';
+            if(type === 'success') styling = 'bg-emerald-900 border border-emerald-500 text-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.5)]';
+            else if(type === 'error') styling = 'bg-red-900 border border-red-500 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.5)]';
+            else styling = 'bg-cyan-900 border border-cyan-500 text-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.5)]';
+            
+            const icon = type === 'success' ? 'ph-check-circle' : (type === 'error' ? 'ph-warning-circle' : 'ph-info');
+            
+            toast.className = `${styling} px-6 py-4 rounded-xl flex items-center gap-3 font-bold text-sm toast-enter pointer-events-auto backdrop-blur-sm`;
+            toast.innerHTML = `
+                <i class="ph-fill ${icon} text-2xl"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.transition = 'all 0.3s ease-in';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        };
+
+        // 2. PDF.js Ayarları
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
+        let pdfDoc = null,
+            pageNum = 1,
+            pageRendering = false,
+            pageNumPending = null,
+            scale = 1.5,
+            canvas = document.getElementById('pdf-canvas'),
+            ctx = canvas.getContext('2d');
+
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({scale: scale});
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+            document.getElementById('page-num').textContent = num;
+            document.getElementById('zoom-level').textContent = Math.round(scale * 100 / 1.5) + '%';
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        window.prevPage = function() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+        window.nextPage = function() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        window.zoomIn = function() {
+            if(scale >= 4.0) return;
+            scale += 0.3;
+            queueRenderPage(pageNum);
+        }
+        window.zoomOut = function() {
+            if (scale <= 0.6) return;
+            scale -= 0.3;
+            queueRenderPage(pageNum);
+        }
+
+        window.closePdfViewer = function() {
+            document.getElementById('pdf-viewer-modal').classList.add('hidden');
+            document.getElementById('pdf-viewer-modal').classList.remove('flex');
+            pdfDoc = null; 
+            canvas.style.transform = 'none'; // reset css scale
+        }
+
+        window.loadPdfFromBuffer = async function(uint8Array, filename = "Sunum") {
+            try {
+                document.getElementById('pdf-title-display').textContent = filename;
+                
+                const modal = document.getElementById('pdf-viewer-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                
+                pdfDoc = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+                document.getElementById('page-count').textContent = pdfDoc.numPages;
+                
+                const containerWidth = document.getElementById('pdf-canvas-container').clientWidth;
+                if(containerWidth < 800) scale = 1.0; 
+                else if (containerWidth < 1200) scale = 1.5; 
+                else scale = 2.0; 
+
+                pageNum = 1;
+                renderPage(pageNum);
+                
+            } catch (error) {
+                console.error("PDF Render Hatası:", error);
+                window.closePdfViewer();
+                window.showToast("PDF dosyası bozuk veya okunamadı.", "error");
+            }
+        };
+
+        // Akıllı Tahta Sürükle (Pan) ve Parmakla Yakınlaştırma (Pinch-to-Zoom)
+        const container = document.getElementById('pdf-canvas-container');
+        let isDown = false;
+        let startX, startY, scrollLeft, scrollTop;
+        
+        // Mouse Events
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - container.offsetLeft;
+            startY = e.pageY - container.offsetTop;
+            scrollLeft = container.scrollLeft;
+            scrollTop = container.scrollTop;
+        });
+        container.addEventListener('mouseleave', () => { isDown = false; });
+        container.addEventListener('mouseup', () => { isDown = false; });
+        container.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const y = e.pageY - container.offsetTop;
+            container.scrollLeft = scrollLeft - (x - startX) * 1.5;
+            container.scrollTop = scrollTop - (y - startY) * 1.5;
+        });
+
+        // Touch Variables for Pinch
+        let initialPinchDistance = null;
+        let initialPinchScale = null;
+
+        container.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                // İki parmak algılandı: Pinch Zoom başlar
+                isDown = false; // Panning'i iptal et
+                initialPinchDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                initialPinchScale = scale;
+            } else if (e.touches.length === 1) {
+                // Tek parmak algılandı: Kaydırma (Pan) başlar
+                isDown = true;
+                startX = e.touches[0].pageX - container.offsetLeft;
+                startY = e.touches[0].pageY - container.offsetTop;
+                scrollLeft = container.scrollLeft;
+                scrollTop = container.scrollTop;
+            }
+        }, {passive: false}); // passive false to allow preventDefault
+
+        container.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Tarayıcının kendi zoom/scroll özelliklerini kapat
+            
+            if (e.touches.length === 2 && initialPinchDistance) {
+                // Zoom İşlemi - Canlı CSS görsel geri bildirimi
+                const currentDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const pinchRatio = currentDistance / initialPinchDistance;
+                
+                // Anında görsellik için CSS scale kullan
+                canvas.style.transform = `scale(${pinchRatio})`;
+                
+                // Zoom yaparken ortalamak için origin ayarı
+                const rect = canvas.getBoundingClientRect();
+                const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2 - rect.left;
+                const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2 - rect.top;
+                canvas.style.transformOrigin = `${centerX}px ${centerY}px`;
+
+            } else if (e.touches.length === 1 && isDown) {
+                // Kaydırma İşlemi
+                const x = e.touches[0].pageX - container.offsetLeft;
+                const y = e.touches[0].pageY - container.offsetTop;
+                container.scrollLeft = scrollLeft - (x - startX) * 2;
+                container.scrollTop = scrollTop - (y - startY) * 2;
+            }
+        }, {passive: false});
+        
+        container.addEventListener('touchend', (e) => {
+            if (initialPinchDistance && e.touches.length < 2) {
+                // Pinch zoom bitti, kalıcı render al
+                const finalTransform = canvas.style.transform;
+                if (finalTransform && finalTransform.includes('scale')) {
+                    const match = finalTransform.match(/scale\(([^)]+)\)/);
+                    if (match) {
+                        const ratio = parseFloat(match[1]);
+                        let newScale = initialPinchScale * ratio;
+                        
+                        // Sınırlandırma (Çok küçülüp büyümemesi için)
+                        newScale = Math.max(0.6, Math.min(newScale, 4.0)); 
+                        scale = newScale;
+                        
+                        // CSS transformu sıfırla ve PDF.js ile net (sharp) şekilde tekrar çizdir
+                        canvas.style.transform = 'none';
+                        initialPinchDistance = null;
+                        queueRenderPage(pageNum);
+                    }
+                }
+            }
+            if(e.touches.length === 0) {
+                isDown = false;
+            }
+        });
+        container.addEventListener('touchcancel', () => { 
+            isDown = false; 
+            initialPinchDistance = null;
+            canvas.style.transform = 'none';
+        });
+    </script>
+
+    <!-- Firebase / Bulut Entegrasyonu (DÜZ YAPILI GÜVENLİ KASA) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bulut-flash-v4';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // Sistemin kendi veritabanı bağlantı ayarlarını otomatik alır
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
+
+        let app, db, auth, currentUser = null;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            const authenticate = async () => {
+                try {
+                    if (initialAuthToken) {
+                        const cred = await signInWithCustomToken(auth, initialAuthToken);
+                        currentUser = cred.user;
+                    } else {
+                        const cred = await signInAnonymously(auth);
+                        currentUser = cred.user;
+                    }
+                } catch (e) {
+                    console.error("Bulut doğrulama hatası:", e);
+                    window.showToast("Sisteme bağlanılamadı.", "error");
+                }
+            };
+            window.authPromise = authenticate();
+        } catch (e) { 
+            console.error("Firebase başlatılamadı:", e);
+        }
+
+        function generateUniqueId() { return Math.random().toString(36).substr(2, 9) + Date.now().toString(36); }
+
+        window.handlePdfUpload = async (event) => {
+            await window.authPromise;
+            // Güvenlik Kilidi: Bağlantı yoksa işlemi durdur
+            if (!currentUser) {
+                event.target.value = '';
+                return window.showToast("Bağlantı hatası, lütfen sayfayı yenileyin.", "error");
+            }
+
+            const folderInput = document.getElementById('upload-folder-input').value.trim().toUpperCase();
+            if(!folderInput) {
+                event.target.value = '';
+                return window.showToast('Lütfen önce bir KLASÖR ADI (örn: MAT9) belirleyin!', 'error');
+            }
+
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const progContainer = document.getElementById('upload-progress-container');
+            const progBar = document.getElementById('upload-progress-bar');
+            const statusTxt = document.getElementById('upload-status-text');
+            
+            progContainer.classList.remove('hidden');
+            progContainer.classList.add('flex');
+            progBar.style.width = '5%';
+            statusTxt.innerText = "Dosya analiz ediliyor...";
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const dataUrl = e.target.result;
+                    const base64Data = dataUrl.split(',')[1];
+                    
+                    const fileId = generateUniqueId(); 
+                    const chunkSize = 800000; 
+                    const chunkCount = Math.ceil(base64Data.length / chunkSize);
+                    
+                    statusTxt.innerText = `Kasaya aktarılıyor...`;
+                    
+                    // ZORUNLU GÜVENLİ YOL: public/data/chunks kullanılarak parçalar kaydediliyor
+                    for (let i = 0; i < chunkCount; i++) {
+                        const chunkStr = base64Data.substring(i * chunkSize, (i + 1) * chunkSize);
+                        const chunkRef = doc(db, 'artifacts', appId, 'public', 'data', 'chunks', `${fileId}_chunk_${i}`);
+                        await setDoc(chunkRef, { data: chunkStr });
+                        
+                        const percent = Math.round(((i + 1) / chunkCount) * 85) + 5;
+                        progBar.style.width = `${percent}%`;
+                    }
+                    
+                    statusTxt.innerText = "Klasör güncelleniyor...";
+                    
+                    // ZORUNLU GÜVENLİ YOL: public/data/folders kullanılarak klasör listesi güncelleniyor
+                    const folderRef = doc(db, 'artifacts', appId, 'public', 'data', 'folders', folderInput);
+                    const folderSnap = await getDoc(folderRef);
+                    let files = [];
+                    
+                    if (folderSnap.exists() && folderSnap.data().files) {
+                        files = folderSnap.data().files;
+                    }
+                    
+                    files.push({
+                        folder: folderInput,
+                        filename: file.name,
+                        chunkCount: chunkCount,
+                        fileId: fileId,
+                        createdAt: Date.now()
+                    });
+                    
+                    await setDoc(folderRef, { files: files });
+                    
+                    progBar.style.width = '100%';
+                    
+                    setTimeout(() => {
+                        progContainer.classList.remove('flex');
+                        progContainer.classList.add('hidden');
+                        window.showToast(`Başarılı! Okulda "${folderInput}" adıyla açabilirsiniz.`);
+                    }, 800);
+                    
+                } catch(error) {
+                    console.error("Yükleme hatası:", error);
+                    progContainer.classList.remove('flex');
+                    progContainer.classList.add('hidden');
+                    window.showToast("Yükleme tamamlanamadı. Bulut erişimi reddedildi.", 'error');
+                }
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        };
+
+        window.fetchFolderContents = async () => {
+            await window.authPromise;
+            if (!currentUser) return window.showToast("Sistem hazır değil.", "error");
+
+            const folderInput = document.getElementById('download-folder-input').value.trim().toUpperCase();
+            if (!folderInput) return window.showToast("Lütfen klasör adını girin.", 'error');
+
+            const folderContainer = document.getElementById('folder-contents-container');
+            const fileList = document.getElementById('file-list');
+            
+            fileList.innerHTML = '<div class="text-sm text-cyan-500 italic flex items-center gap-2"><div class="loader !w-4 !h-4 border-cyan-500"></div> Bulut taranıyor...</div>';
+            folderContainer.classList.remove('hidden');
+            folderContainer.classList.add('flex');
+
+            try {
+                // ZORUNLU GÜVENLİ YOL üzerinden klasör aranıyor
+                const folderRef = doc(db, 'artifacts', appId, 'public', 'data', 'folders', folderInput);
+                const folderSnap = await getDoc(folderRef);
+                
+                if (!folderSnap.exists() || !folderSnap.data().files || folderSnap.data().files.length === 0) {
+                    fileList.innerHTML = '<div class="text-sm text-red-400 font-semibold p-3 border border-red-900 bg-red-950 rounded-lg">Bu klasörde ("' + folderInput + '") bir sunum bulunamadı.</div>';
+                    return;
+                }
+
+                const filesData = folderSnap.data().files;
+                fileList.innerHTML = '';
+                
+                // En son yüklenen en üstte çıksın
+                filesData.sort((a, b) => b.createdAt - a.createdAt); 
+
+                filesData.forEach(fileData => {
+                    const itemContainer = document.createElement('div');
+                    itemContainer.className = "w-full flex items-center justify-between bg-[#131b26] border border-slate-700 hover:border-cyan-500 hover:shadow-[0_0_10px_rgba(6,182,212,0.3)] p-2 rounded-xl transition-all group";
+                    
+                    const openBtn = document.createElement('button');
+                    openBtn.className = "flex-grow flex items-center gap-3 overflow-hidden text-left hover:bg-slate-800 p-2 rounded-lg transition-colors cursor-pointer";
+                    openBtn.innerHTML = `
+                        <div class="bg-red-900 border border-red-500 p-2 rounded-lg shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                            <i class="ph-fill ph-file-pdf text-red-400 text-2xl"></i>
+                        </div>
+                        <span class="font-bold text-slate-200 truncate group-hover:text-cyan-400 transition-colors">${fileData.filename}</span>
+                    `;
+                    openBtn.onclick = () => window.downloadAndOpenPdf(fileData.fileId, fileData.chunkCount, fileData.filename);
+
+                    const btnGroup = document.createElement('div');
+                    btnGroup.className = "flex items-center gap-1 shrink-0";
+
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = "p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-900 rounded-lg transition-colors cursor-pointer";
+                    downloadBtn.innerHTML = `<i class="ph-bold ph-download-simple text-xl"></i>`;
+                    downloadBtn.title = "Fiziki Olarak Tahtaya İndir";
+                    downloadBtn.onclick = () => window.downloadFileToDevice(fileData.fileId, fileData.chunkCount, fileData.filename);
+
+                    // Silme butonu artık özel bir onay kutusu açıyor
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = "p-2 text-slate-400 hover:text-red-400 hover:bg-red-900 rounded-lg transition-colors cursor-pointer";
+                    deleteBtn.innerHTML = `<i class="ph-bold ph-trash text-xl"></i>`;
+                    deleteBtn.title = "Kalıcı Olarak Sil";
+                    deleteBtn.onclick = () => window.customDeleteConfirm(fileData.fileId, fileData.chunkCount, fileData.filename, folderInput);
+
+                    btnGroup.appendChild(downloadBtn);
+                    btnGroup.appendChild(deleteBtn);
+                    itemContainer.appendChild(openBtn);
+                    itemContainer.appendChild(btnGroup);
+                    fileList.appendChild(itemContainer);
+                });
+
+            } catch (error) {
+                console.error("Kasayı okuma hatası:", error);
+                fileList.innerHTML = '<div class="text-sm text-red-400 font-semibold p-2 border border-red-900 bg-red-950 rounded-lg">Sunucu bağlantısı kurulamadı.</div>';
+            }
+        };
+
+        // Özel Silme Onay Kutusu (Tarayıcı uyarıları engellediği için)
+        window.customDeleteConfirm = (fileId, chunkCount, filename, folderInput) => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `bg-red-950 border border-red-500 text-red-100 shadow-[0_0_20px_rgba(239,68,68,0.6)] p-4 rounded-xl flex flex-col gap-3 font-bold text-sm toast-enter pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-2"><i class="ph-fill ph-warning text-2xl text-red-400"></i> <span>"${filename}" silinsin mi?</span></div>
+                <div class="flex gap-2 justify-end mt-1">
+                    <button id="cancel-del" class="px-4 py-2 bg-slate-800 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors">İptal</button>
+                    <button id="confirm-del" class="px-4 py-2 bg-red-600 rounded-lg text-white hover:bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.4)] transition-colors">Evet, Sil</button>
+                </div>
+            `;
+            container.appendChild(toast);
+
+            document.getElementById('cancel-del').onclick = () => { toast.remove(); };
+            document.getElementById('confirm-del').onclick = () => {
+                toast.remove();
+                window.executeDelete(fileId, chunkCount, folderInput);
+            };
+        };
+
+        window.executeDelete = async (fileId, chunkCount, folderInput) => {
+            try {
+                window.showToast("Siliniyor...", 'info');
+                
+                const folderRef = doc(db, 'artifacts', appId, 'public', 'data', 'folders', folderInput);
+                const folderSnap = await getDoc(folderRef);
+                
+                if (folderSnap.exists() && folderSnap.data().files) {
+                    let files = folderSnap.data().files.filter(f => f.fileId !== fileId);
+                    await setDoc(folderRef, { files: files });
+                }
+
+                for (let i = 0; i < chunkCount; i++) {
+                    const chunkRef = doc(db, 'artifacts', appId, 'public', 'data', 'chunks', `${fileId}_chunk_${i}`);
+                    await deleteDoc(chunkRef);
+                }
+                
+                window.showToast(`Başarıyla silindi.`);
+                window.fetchFolderContents();
+            } catch (error) { window.showToast("Silme başarısız.", 'error'); }
+        };
+
+        window.downloadFileToDevice = async (fileId, chunkCount, filename) => {
+            const progContainer = document.getElementById('download-progress-container');
+            const progBar = document.getElementById('download-progress-bar');
+            const statusTxt = document.getElementById('download-status-text');
+            
+            progContainer.classList.remove('hidden');
+            progContainer.classList.add('flex');
+            progBar.style.width = '5%';
+            statusTxt.innerText = `Dosya indiriliyor...`;
+
+            try {
+                let fullBase64 = '';
+                for (let i = 0; i < chunkCount; i++) {
+                    const chunkRef = doc(db, 'artifacts', appId, 'public', 'data', 'chunks', `${fileId}_chunk_${i}`);
+                    const chunkSnap = await getDoc(chunkRef);
+                    if(chunkSnap.exists()) fullBase64 += chunkSnap.data().data;
+                    progBar.style.width = `${Math.round(((i + 1) / chunkCount) * 85) + 5}%`;
+                }
+                
+                statusTxt.innerText = "PDF Birleştiriliyor...";
+                const cleanBase64 = fullBase64.replace(/\s/g, '');
+                const raw = window.atob(cleanBase64);
+                const array = new Uint8Array(new ArrayBuffer(raw.length));
+                for (let i = 0; i < raw.length; i++) array[i] = raw.charCodeAt(i);
+                
+                const blob = new Blob([array], {type: 'application/pdf'});
+                const url = window.URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                
+                progBar.style.width = '100%';
+                setTimeout(() => {
+                    progContainer.classList.remove('flex');
+                    progContainer.classList.add('hidden');
+                    window.showToast(`İndirme Tamamlandı!`);
+                }, 800);
+
+            } catch (error) {
+                progContainer.classList.add('hidden');
+                window.showToast("İndirme hatası.", 'error');
+            }
+        };
+
+        window.downloadAndOpenPdf = async (fileId, chunkCount, filename) => {
+            const progContainer = document.getElementById('download-progress-container');
+            const progBar = document.getElementById('download-progress-bar');
+            const statusTxt = document.getElementById('download-status-text');
+            const folderContainer = document.getElementById('folder-contents-container');
+            
+            folderContainer.classList.add('hidden');
+            progContainer.classList.remove('hidden');
+            progContainer.classList.add('flex');
+            progBar.style.width = '5%';
+            statusTxt.innerText = `Sistemden çekiliyor...`;
+
+            try {
+                let fullBase64 = '';
+                for (let i = 0; i < chunkCount; i++) {
+                    const chunkRef = doc(db, 'artifacts', appId, 'public', 'data', 'chunks', `${fileId}_chunk_${i}`);
+                    const chunkSnap = await getDoc(chunkRef);
+                    
+                    if(chunkSnap.exists()) fullBase64 += chunkSnap.data().data;
+                    else throw new Error("Parça eksik!");
+                    
+                    progBar.style.width = `${Math.round(((i + 1) / chunkCount) * 85) + 5}%`;
+                }
+                
+                statusTxt.innerText = "Tahtaya Yansıtılıyor...";
+                const cleanBase64 = fullBase64.replace(/\s/g, '');
+                const raw = window.atob(cleanBase64);
+                const array = new Uint8Array(new ArrayBuffer(raw.length));
+                for (let i = 0; i < raw.length; i++) array[i] = raw.charCodeAt(i);
+                
+                progBar.style.width = '100%';
+                setTimeout(() => {
+                    progContainer.classList.remove('flex');
+                    progContainer.classList.add('hidden');
+                    window.loadPdfFromBuffer(array, filename);
+                    window.showToast("Bağlantı Kuruldu!");
+                }, 500);
+
+            } catch (error) {
+                progContainer.classList.remove('flex');
+                progContainer.classList.add('hidden');
+                window.showToast("Açılırken bağlantı koptu.", 'error');
+            }
+        };
+    </script>
+</body>
+</html>
