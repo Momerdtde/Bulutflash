@@ -80,7 +80,7 @@
             <h1 class="text-2xl font-black tracking-tight text-white">Bulut<span class="neon-text-emerald">Flash</span></h1>
         </div>
         <div id="connection-badge" class="text-xs font-semibold text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div> Bulut Kasası Aktif
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div> Kasalar Hazır
         </div>
     </header>
 
@@ -96,7 +96,7 @@
                 </div>
                 
                 <h2 class="text-3xl font-extrabold mb-3 neon-text-emerald">1. Evde Yükle</h2>
-                <p class="text-slate-400 mb-6 text-sm">Kendinize ait bir Klasör Adı (örn: MAT9) belirleyin. Evdeki büyük PDF sunumunuzu bu klasöre gönderin.</p>
+                <p class="text-slate-400 mb-6 text-sm">Kendinize ait bir Klasör Adı (örn: MAT9) belirleyin. Evdeki PDF sunumunuzu bu klasöre gönderin.</p>
                 
                 <div class="w-full flex flex-col gap-4 mb-4">
                     <input type="text" id="upload-folder-input" placeholder="KLASÖR ADINIZ (Örn: MAT9)" class="w-full px-4 py-4 bg-black border border-slate-700 rounded-2xl font-bold text-xl text-center text-white focus:outline-none focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] uppercase placeholder:text-slate-600 transition-all">
@@ -161,7 +161,7 @@
             <canvas id="pdf-canvas" class="shadow-[0_0_40px_rgba(0,0,0,0.9)] rounded-md bg-white transition-transform duration-75 ease-out"></canvas>
         </div>
 
-        <!-- PDF Alt Kontrol Çubuğu -->
+        <!-- PDF Alt Kontrol Çubuğu (İstediğiniz Gibi Altta ve Neon Tasarımlı) -->
         <div class="bg-[#0a0a0a] border-t border-slate-800 p-4 flex flex-wrap justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.8)] gap-4 z-10 shrink-0">
             
             <div class="flex items-center gap-3">
@@ -224,7 +224,7 @@
             }, 3500);
         };
 
-        // IndexedDB Veritabanı Açma (Büyük Dosyalar İçin Kesintisiz Hafıza)
+        // IndexedDB Veritabanı Açma (50 MB'a Kadar Kesintisiz Cihaz/Tahta Hafızası)
         function openDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open('BulutFlashDB', 1);
@@ -246,7 +246,7 @@
                 const store = transaction.objectStore('presentations');
                 const record = {
                     fileId: folder + '_' + Date.now(),
-                    folder: folder,
+                    folder: folder.toUpperCase(),
                     filename: fileData.filename,
                     data: fileData.data,
                     createdAt: Date.now()
@@ -265,7 +265,7 @@
                 const request = store.getAll();
                 request.onsuccess = () => {
                     const allFiles = request.result;
-                    const filtered = allFiles.filter(f => f.folder.toUpperCase() === folder.toUpperCase());
+                    const filtered = allFiles.filter(f => f.folder === folder.toUpperCase());
                     resolve(filtered);
                 };
                 request.onerror = () => reject(request.error);
@@ -345,7 +345,7 @@
             }
         };
 
-        // Dokunmatik Sürükleme ve Pinch Zoom (Parmakla Büyütme)
+        // Akıllı Tahta İçin Dokunmatik Sürükleme ve Pinch Zoom (Parmakla Büyütme/Küçültme)
         const container = document.getElementById('pdf-canvas-container');
         let isDown = false, startX, startY, scrollLeft, scrollTop;
         
