@@ -10,13 +10,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     
     <!-- Firebase SDKs for True Cloud Sync -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
 
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #050505; 
+            background-color: #000000; 
             color: #e2e8f0; 
             overscroll-behavior-y: contain; 
         }
@@ -30,11 +31,11 @@
             text-shadow: 0 0 5px #0891b2, 0 0 15px #06b6d4;
         }
         .neon-border-emerald {
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.25), inset 0 0 10px rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 10px rgba(16, 185, 129, 0.1);
             border-color: #059669;
         }
         .neon-border-cyan {
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.25), inset 0 0 10px rgba(6, 182, 212, 0.1);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.25), inset 0 0 10px rgba(6, 182, 212, 0.1);
             border-color: #0891b2;
         }
 
@@ -71,43 +72,43 @@
         #pdf-canvas { transform-origin: center center; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden selection:bg-cyan-500 selection:text-white">
+<body class="h-screen flex flex-col overflow-hidden selection:bg-cyan-500 selection:text-white bg-black">
 
-    <header class="bg-[#0a0a0a] border-b border-slate-800 px-6 py-4 flex justify-between items-center z-25 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+    <header class="bg-black border-b border-neutral-900 px-6 py-4 flex justify-between items-center z-25 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
         <div class="flex items-center gap-3">
-            <div class="bg-black border border-emerald-500 p-2 rounded-xl text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+            <div class="bg-neutral-950 border border-emerald-500 p-2.5 rounded-2xl text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                 <i class="ph-bold ph-lightning text-2xl"></i>
             </div>
             <h1 class="text-2xl font-black tracking-tight text-white">Bulut<span class="neon-text-emerald">Flash</span></h1>
         </div>
-        <div id="connection-badge" class="text-xs font-semibold text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
-            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div> Bulut Senkronize
+        <div id="connection-badge" class="text-xs font-semibold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-3.5 py-1.5 rounded-xl flex items-center gap-2 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div> Bulut Aktif
         </div>
     </header>
 
-    <main class="flex-grow flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <main class="flex-grow flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black">
         <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
             
             <!-- SOL TARAF: Evde Yükleme Alanı -->
-            <div class="bg-[#0f1219] border border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden group hover:neon-border-emerald transition-all duration-500">
+            <div class="bg-neutral-950 border border-neutral-900 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden group hover:neon-border-emerald transition-all duration-500">
                 <div class="absolute top-0 left-0 w-full h-1 bg-emerald-500 shadow-[0_0_15px_#10b981]"></div>
                 
-                <div class="w-24 h-24 bg-black border border-emerald-900 text-emerald-400 rounded-full flex items-center justify-center mb-6 mt-4 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300">
+                <div class="w-24 h-24 bg-black border border-emerald-900 text-emerald-400 rounded-full flex items-center justify-center mb-6 mt-4 group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300">
                     <i class="ph-fill ph-folder-plus text-5xl drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]"></i>
                 </div>
                 
                 <h2 class="text-3xl font-extrabold mb-3 neon-text-emerald">1. Evde Yükle</h2>
-                <p class="text-slate-400 mb-6 text-sm">Klasör adı (örn: MAT9) belirleyin ve PDF sunumunuzu buluta gönderin.</p>
+                <p class="text-slate-400 mb-6 text-sm">Klasör adı (örn: MAT9) belirleyin ve PDF sunumunuzu ortak buluta gönderin.</p>
                 
                 <div class="w-full flex flex-col gap-4 mb-4">
-                    <input type="text" id="upload-folder-input" placeholder="KLASÖR ADINIZ (Örn: MAT9)" class="w-full px-4 py-4 bg-black border border-slate-700 rounded-2xl font-bold text-xl text-center text-white focus:outline-none focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] uppercase placeholder:text-slate-600 transition-all">
+                    <input type="text" id="upload-folder-input" placeholder="KLASÖR ADINIZ (Örn: MAT9)" class="w-full px-4 py-4 bg-black border border-neutral-800 rounded-2xl font-bold text-xl text-center text-white focus:outline-none focus:border-emerald-500 focus:shadow-[0_0_15px_rgba(16,185,129,0.3)] uppercase placeholder:text-neutral-700 transition-all">
                 </div>
 
-                <button onclick="document.getElementById('pdf-upload-input').click()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all flex justify-center items-center gap-3 cursor-pointer">
+                <button onclick="document.getElementById('pdf-upload-input').click()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xl py-5 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex justify-center items-center gap-3 cursor-pointer">
                     <i class="ph-bold ph-upload-simple text-2xl"></i> PDF Seç & Yükle
                 </button>
                 <input type="file" id="pdf-upload-input" accept="application/pdf" class="hidden" onchange="window.handlePdfUpload(event)">
-                <p class="text-xs text-slate-500 mt-4 font-semibold">Ortak Bulut Desteği (25 MB'a kadar)</p>
+                <p class="text-xs text-neutral-500 mt-4 font-semibold">Ortak Bulut Desteği (25 MB'a kadar)</p>
 
                 <!-- Yükleme İlerlemesi -->
                 <div id="upload-progress-container" class="w-full mt-6 hidden flex-col items-center">
@@ -122,10 +123,10 @@
             </div>
 
             <!-- SAĞ TARAF: Okulda Açma Alanı -->
-            <div class="bg-[#0f141e] border border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden group hover:neon-border-cyan transition-all duration-500">
+            <div class="bg-neutral-950 border border-neutral-900 rounded-3xl p-8 flex flex-col items-center text-center relative overflow-hidden group hover:neon-border-cyan transition-all duration-500">
                 <div class="absolute top-0 left-0 w-full h-1 bg-cyan-500 shadow-[0_0_15px_#06b6d4]"></div>
                 
-                <div class="w-24 h-24 bg-black border border-cyan-900 text-cyan-400 rounded-full flex items-center justify-center mb-6 mt-4 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all duration-300">
+                <div class="w-24 h-24 bg-black border border-cyan-900 text-cyan-400 rounded-full flex items-center justify-center mb-6 mt-4 group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(6,182,212,0.4)] transition-all duration-300">
                     <i class="ph-fill ph-chalkboard-teacher text-5xl drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>
                 </div>
                 
@@ -133,16 +134,16 @@
                 <p class="text-slate-400 mb-6 text-sm">Klasör adınızı girin ve diğer cihazlardan attığınız sunumlara ulaşın.</p>
                 
                 <div class="w-full flex flex-col gap-4">
-                    <input type="text" id="download-folder-input" placeholder="KLASÖR ADINIZ (Örn: MAT9)" class="w-full px-4 py-4 bg-black border border-slate-700 rounded-2xl font-bold text-xl text-center text-white focus:outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] uppercase placeholder:text-slate-600 transition-all">
+                    <input type="text" id="download-folder-input" placeholder="KLASÖR ADINIZ (Örn: MAT9)" class="w-full px-4 py-4 bg-black border border-neutral-800 rounded-2xl font-bold text-xl text-center text-white focus:outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] uppercase placeholder:text-neutral-700 transition-all">
                     
-                    <button onclick="window.fetchFolderContents()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xl py-4 rounded-2xl shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all flex justify-center items-center gap-3 cursor-pointer">
+                    <button onclick="window.fetchFolderContents()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xl py-4 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all flex justify-center items-center gap-3 cursor-pointer">
                         <i class="ph-bold ph-folder-open text-2xl"></i> Klasörümü Aç
                     </button>
                 </div>
 
                 <!-- Klasör İçeriği Listesi -->
-                <div id="folder-contents-container" class="w-full mt-6 hidden flex-col items-start gap-3 bg-black p-4 rounded-2xl border border-slate-800 max-h-48 overflow-y-auto">
-                    <h3 class="text-slate-300 font-bold text-sm w-full text-left border-b border-slate-800 pb-2 mb-1 flex justify-between items-center">
+                <div id="folder-contents-container" class="w-full mt-6 hidden flex-col items-start gap-3 bg-black p-4 rounded-2xl border border-neutral-900 max-h-48 overflow-y-auto">
+                    <h3 class="text-slate-300 font-bold text-sm w-full text-left border-b border-neutral-900 pb-2 mb-1 flex justify-between items-center">
                         <span class="text-cyan-400">Buluttaki Sunumlar</span>
                         <i class="ph-bold ph-files text-cyan-500"></i>
                     </h3>
@@ -156,40 +157,40 @@
     <div id="pdf-viewer-modal" class="fixed inset-0 bg-black z-50 hidden flex-col text-white">
         
         <!-- PDF Canvas Alanı -->
-        <div id="pdf-canvas-container" class="flex-grow overflow-auto flex justify-center items-center bg-[#050505] cursor-grab active:cursor-grabbing relative touch-none">
-            <canvas id="pdf-canvas" class="shadow-[0_0_40px_rgba(0,0,0,0.9)] rounded-md bg-white transition-transform duration-75 ease-out"></canvas>
+        <div id="pdf-canvas-container" class="flex-grow overflow-auto flex justify-center items-center bg-black cursor-grab active:cursor-grabbing relative touch-none">
+            <canvas id="pdf-canvas" class="shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-md bg-white transition-transform duration-75 ease-out"></canvas>
         </div>
 
         <!-- PDF Alt Kontrol Çubuğu -->
-        <div class="bg-[#0a0a0a] border-t border-slate-800 p-4 flex flex-wrap justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.8)] gap-4 z-10 shrink-0">
+        <div class="bg-black border-t border-neutral-900 p-4 flex flex-wrap justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.9)] gap-4 z-10 shrink-0">
             
             <div class="flex items-center gap-3">
-                <button onclick="window.closePdfViewer()" class="bg-red-600 hover:bg-red-500 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_10px_rgba(220,38,38,0.3)] cursor-pointer">
+                <button onclick="window.closePdfViewer()" class="bg-red-600 hover:bg-red-500 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(220,38,38,0.4)] cursor-pointer">
                     <i class="ph-bold ph-power text-xl"></i> Çıkış
                 </button>
                 <span id="pdf-title-display" class="font-semibold hidden md:block text-slate-400 truncate max-w-[200px]">Sunum</span>
             </div>
 
             <!-- Sayfa Değiştirme -->
-            <div class="flex items-center gap-2 bg-[#121212] border border-slate-800 p-1.5 rounded-2xl shadow-inner">
-                <button onclick="window.prevPage()" class="p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer active:scale-95 text-cyan-400">
+            <div class="flex items-center gap-2 bg-neutral-950 border border-neutral-800 p-1.5 rounded-2xl shadow-inner">
+                <button onclick="window.prevPage()" class="p-4 bg-neutral-900 hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer active:scale-95 text-cyan-400">
                     <i class="ph-bold ph-caret-left text-2xl"></i>
                 </button>
                 <div class="px-4 font-bold text-xl min-w-[5rem] text-center text-white tracking-widest">
-                    <span id="page-num">1</span> <span class="text-slate-600">/</span> <span id="page-count" class="text-slate-400">?</span>
+                    <span id="page-num">1</span> <span class="text-neutral-700">/</span> <span id="page-count" class="text-slate-400">?</span>
                 </div>
-                <button onclick="window.nextPage()" class="p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer active:scale-95 text-cyan-400">
+                <button onclick="window.nextPage()" class="p-4 bg-neutral-900 hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer active:scale-95 text-cyan-400">
                     <i class="ph-bold ph-caret-right text-2xl"></i>
                 </button>
             </div>
 
             <!-- Zoom Kontrolleri -->
-            <div class="flex items-center gap-2 bg-[#121212] border border-slate-800 p-1.5 rounded-2xl">
-                <button onclick="window.zoomOut()" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer text-slate-300">
+            <div class="flex items-center gap-2 bg-neutral-950 border border-neutral-800 p-1.5 rounded-2xl">
+                <button onclick="window.zoomOut()" class="p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer text-slate-300">
                     <i class="ph-bold ph-magnifying-glass-minus text-2xl"></i>
                 </button>
                 <span id="zoom-level" class="font-bold text-sm min-w-[3.5rem] text-center text-emerald-400">100%</span>
-                <button onclick="window.zoomIn()" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer text-slate-300">
+                <button onclick="window.zoomIn()" class="p-3 bg-neutral-900 hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer text-slate-300">
                     <i class="ph-bold ph-magnifying-glass-plus text-2xl"></i>
                 </button>
             </div>
@@ -205,9 +206,9 @@
             const toast = document.createElement('div');
             
             let styling = '';
-            if(type === 'success') styling = 'bg-emerald-950 border border-emerald-500 text-emerald-100 shadow-[0_0_15px_rgba(16,185,129,0.5)]';
-            else if(type === 'error') styling = 'bg-red-950 border border-red-500 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.5)]';
-            else styling = 'bg-cyan-950 border border-cyan-500 text-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.5)]';
+            if(type === 'success') styling = 'bg-emerald-950 border border-emerald-500 text-emerald-100 shadow-[0_0_20px_rgba(16,185,129,0.5)]';
+            else if(type === 'error') styling = 'bg-red-950 border border-red-500 text-red-100 shadow-[0_0_20px_rgba(239,68,68,0.5)]';
+            else styling = 'bg-cyan-950 border border-cyan-500 text-cyan-100 shadow-[0_0_20px_rgba(6,182,212,0.5)]';
             
             const icon = type === 'success' ? 'ph-check-circle' : (type === 'error' ? 'ph-warning-circle' : 'ph-info');
             
@@ -223,35 +224,42 @@
             }, 3500);
         };
 
-        // Initialize Firebase Public Cloud Database
-        const firebaseConfig = {
+        // Initialize Firebase Cloud Database
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bulutflash-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyD-BulutFlashPublicTestKey998877",
             authDomain: "bulutflash-app.firebaseapp.com",
             projectId: "bulutflash-app"
         };
         
-        let db;
+        let db, auth;
         try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
+            firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
+            auth = firebase.auth();
+            
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                auth.signInWithCustomToken(__initial_auth_token).catch(() => auth.signInAnonymously());
+            } else {
+                auth.signInAnonymously();
+            }
         } catch(e) {
-            console.warn("Firebase initialized with local fallback");
+            console.warn("Firebase initialized fallback");
         }
 
-        // Chunking PDF to store large files in Firestore
         async function saveFileToCloud(folder, fileData, onProgress) {
+            if (!auth || !auth.currentUser) {
+                if(auth) await auth.signInAnonymously().catch(() => {});
+            }
             const folderUpper = folder.toUpperCase();
             const fileId = folderUpper + '_' + Date.now();
             const base64String = fileData.data;
             
-            // Split base64 into ~500KB chunks
             const chunkSize = 500 * 1024;
             const totalChunks = Math.ceil(base64String.length / chunkSize);
             
-            // Save Metadata first
-            await db.collection('presentations').doc(fileId).set({
+            // Save Metadata using strict path
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('presentations').doc(fileId).set({
                 fileId: fileId,
                 folder: folderUpper,
                 filename: fileData.filename,
@@ -259,10 +267,9 @@
                 createdAt: Date.now()
             });
 
-            // Save Chunks
             for (let i = 0; i < totalChunks; i++) {
                 const chunkData = base64String.substring(i * chunkSize, (i + 1) * chunkSize);
-                await db.collection('presentation_chunks').doc(`${fileId}_chunk_${i}`).set({
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('presentation_chunks').doc(`${fileId}_chunk_${i}`).set({
                     fileId: fileId,
                     chunkIndex: i,
                     data: chunkData
@@ -275,11 +282,17 @@
         }
 
         async function getFilesFromCloud(folder) {
+            if (!auth || !auth.currentUser) {
+                if(auth) await auth.signInAnonymously().catch(() => {});
+            }
             const folderUpper = folder.toUpperCase();
-            const snapshot = await db.collection('presentations').where('folder', '==', folderUpper).get();
+            const snapshot = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('presentations').get();
             const files = [];
             snapshot.forEach(doc => {
-                files.push(doc.data());
+                const data = doc.data();
+                if (data.folder === folderUpper) {
+                    files.push(data);
+                }
             });
             return files;
         }
@@ -287,9 +300,9 @@
         async function getFileFullData(fileId, totalChunks, onProgress) {
             let fullData = "";
             for (let i = 0; i < totalChunks; i++) {
-                const doc = await db.collection('presentation_chunks').doc(`${fileId}_chunk_${i}`).get();
-                if (doc.exists) {
-                    fullData += doc.data().data;
+                const docSnap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('presentation_chunks').doc(`${fileId}_chunk_${i}`).get();
+                if (docSnap.exists) {
+                    fullData += docSnap.data().data;
                 }
                 if (onProgress) {
                     onProgress(Math.round(((i + 1) / totalChunks) * 100));
@@ -299,9 +312,9 @@
         }
 
         async function deleteFileFromCloud(fileId, totalChunks) {
-            await db.collection('presentations').doc(fileId).delete();
+            await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('presentations').doc(fileId).delete();
             for (let i = 0; i < totalChunks; i++) {
-                await db.collection('presentation_chunks').doc(`${fileId}_chunk_${i}`).delete();
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('presentation_chunks').doc(`${fileId}_chunk_${i}`).delete();
             }
         }
 
@@ -428,6 +441,11 @@
             const file = event.target.files[0];
             if (!file) return;
 
+            if (file.size > 25 * 1024 * 1024) {
+                event.target.value = '';
+                return window.showToast('Dosya boyutu 25 MB\'dan büyük olamaz.', 'error');
+            }
+
             const progContainer = document.getElementById('upload-progress-container');
             const progBar = document.getElementById('upload-progress-bar');
             const statusTxt = document.getElementById('upload-status-text');
@@ -492,12 +510,12 @@
 
                 filesData.forEach(fileData => {
                     const itemContainer = document.createElement('div');
-                    itemContainer.className = "w-full flex items-center justify-between bg-[#121824] border border-slate-700 hover:border-cyan-500 p-2 rounded-xl transition-all group";
+                    itemContainer.className = "w-full flex items-center justify-between bg-neutral-900 border border-neutral-800 hover:border-cyan-500 p-2.5 rounded-xl transition-all group";
                     
                     const openBtn = document.createElement('button');
-                    openBtn.className = "flex-grow flex items-center gap-3 overflow-hidden text-left hover:bg-slate-800 p-2 rounded-lg cursor-pointer";
+                    openBtn.className = "flex-grow flex items-center gap-3 overflow-hidden text-left hover:bg-neutral-800 p-2 rounded-lg cursor-pointer";
                     openBtn.innerHTML = `
-                        <div class="bg-red-900/80 border border-red-500 p-2 rounded-lg shrink-0">
+                        <div class="bg-red-950 border border-red-800 p-2 rounded-lg shrink-0">
                             <i class="ph-fill ph-file-pdf text-red-400 text-2xl"></i>
                         </div>
                         <span class="font-bold text-slate-200 truncate group-hover:text-cyan-400">${fileData.filename}</span>
@@ -505,16 +523,16 @@
                     openBtn.onclick = () => window.openCloudPdf(fileData.fileId, fileData.totalChunks, fileData.filename);
 
                     const btnGroup = document.createElement('div');
-                    btnGroup.className = "flex items-center gap-1 shrink-0";
+                    btnGroup.className = "flex items-center gap-1.5 shrink-0";
 
                     const downloadBtn = document.createElement('button');
-                    downloadBtn.className = "p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950 rounded-lg cursor-pointer";
+                    downloadBtn.className = "p-2.5 text-slate-400 hover:text-emerald-400 hover:bg-emerald-950 rounded-lg cursor-pointer";
                     downloadBtn.innerHTML = `<i class="ph-bold ph-download-simple text-xl"></i>`;
                     downloadBtn.title = "İndir";
                     downloadBtn.onclick = () => window.downloadCloudPdf(fileData.fileId, fileData.totalChunks, fileData.filename);
 
                     const deleteBtn = document.createElement('button');
-                    deleteBtn.className = "p-2 text-slate-400 hover:text-red-400 hover:bg-red-950 rounded-lg cursor-pointer";
+                    deleteBtn.className = "p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-950 rounded-lg cursor-pointer";
                     deleteBtn.innerHTML = `<i class="ph-bold ph-trash text-xl"></i>`;
                     deleteBtn.title = "Sil";
                     deleteBtn.onclick = async () => {
